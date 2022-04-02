@@ -262,18 +262,44 @@ def risk_profile(avg_total):
         ratio of equity.
 
     '''
-    if 0 < avg_total <= 35:
-        equity = float(0.15)
-    elif 35 < avg_total <= 45:
-        equity = float(0.30)
-    elif 45 < avg_total <= 55:
-        equity = float(0.50)
-    elif 55 < avg_total <= 65:
-        equity = float(0.70)
+    if 0 < avg_total < 35:
+        longDurationBond = 0.85
+        nifty = 0.15
+        it = 0.00
+        smallCap = 0.0
+    elif 35 <= avg_total < 45:
+        longDurationBond = 0.70
+        nifty = 0.199
+        it = 0.101
+        smallCap = 0.0
+    elif 45 <= avg_total < 50:
+        longDurationBond = 0.50
+        nifty = 0.249
+        it = 0.151
+        smallCap = 0.10
+    elif 50 <= avg_total < 55:
+        longDurationBond = 0.30
+        nifty = 0.199
+        it = 0.201
+        smallCap = 0.20
+    elif 55 <= avg_total < 59:
+        longDurationBond = 0.30
+        nifty = 0.299
+        it = 0.201
+        smallCap = 0.20
+    elif 60 <= avg_total < 65:
+        longDurationBond = 0.30
+        nifty = 0.259
+        it = 0.201
+        smallCap = 0.25
     else:
-        equity = float(0.85)
-    debt = round(1 - equity, 3)
-    return debt, equity
+        longDurationBond = 0.15
+        nifty = 0.299
+        it = 0.251
+        smallCap = 0.30
+    debt = longDurationBond
+    equity = nifty + it + smallCap
+    return debt, equity, longDurationBond, nifty, it, smallCap
 
 
 
@@ -802,7 +828,8 @@ def line_chart(df_forecast, name, mobile, code):
 
 
 def pptx_work(presentation, name, mobile, code,date, sip, aror, figi, avg_capacities, avg_tolerances,
-              net_worth_as_input, age, life_stage, savings_as_input, income_source, income_as_input, data_row):
+              net_worth_as_input, age, life_stage, savings_as_input, income_source, income_as_input, data_row,
+              longDurationBond,nifty, it, smallCap,nif):
     '''
     It does the whole work of modifying/creating the pptx file with requests
     made above. It takes in a lot of params. They are self explanatory and
@@ -822,12 +849,12 @@ def pptx_work(presentation, name, mobile, code,date, sip, aror, figi, avg_capaci
     bar_img_path = 'bar'+str(name)+str(mobile)+str(code)+'.png'
     lin_img_path = 'line'+str(name)+str(mobile)+str(code)+'.png'
 
-    def fill_bio(mypres,r,c, text):
+    def fill_bio(mypres,sno,shapeNo,r,c, text):
         '''
         Fills the table in pptx
 
         '''
-        p = mypres.slides[0].shapes[21].table.cell(r,c).text_frame.paragraphs[0]
+        p = mypres.slides[sno].shapes[shapeNo].table.cell(r,c).text_frame.paragraphs[0]
         #clears the cell
         run = p.clear()
         run = p.add_run()
@@ -836,17 +863,26 @@ def pptx_work(presentation, name, mobile, code,date, sip, aror, figi, avg_capaci
         font.name = 'Times New Roman'
         font.size = Pt(8)
 
-    fill_bio(mypres,0,1, name)
-    fill_bio(mypres,1,1, '+'+str(mobile)[:2]+str('-'+mobile[2:]))
-    fill_bio(mypres,2,1, net_worth_as_input)                 #(str('INR ')+f"{int(net_worth):,}"))
-    fill_bio(mypres,0,3, str(age)+' years')
-    fill_bio(mypres,1,3, life_stage)
-    fill_bio(mypres,2,3, savings_as_input)                                    #str(savings*100)+'%')
-    fill_bio(mypres,0,5, income_source)
-    fill_bio(mypres,1,5, income_as_input)                                    #str('INR ')+f"{income:,}")
-
-
-
+    fill_bio(mypres,0,20,0,1, name)
+    fill_bio(mypres,0,20,1,1, '+'+str(mobile)[:2]+str('-'+mobile[2:]))
+    fill_bio(mypres,0,20,2,1, net_worth_as_input)                
+    fill_bio(mypres,0,20,0,3, str(age)+' years')
+    fill_bio(mypres,0,20,1,3, life_stage)
+    fill_bio(mypres,0,20,2,3, savings_as_input)                                   
+    fill_bio(mypres,0,20,0,5, income_source)
+    fill_bio(mypres,0,20,1,5, income_as_input)                                  
+    
+    monthly_sip = sip/12
+    fill_bio(mypres,1,14,1,1, str(nifty*100)+"%")
+    fill_bio(mypres,1,14,1,2, str(round(monthly_sip*nifty,0)))
+    fill_bio(mypres,1,14,2,1, str(it*100)+"%")
+    fill_bio(mypres,1,14,2,2, str(round(monthly_sip*it,0)))
+    fill_bio(mypres,1,14,3,1, str(smallCap*100)+"%")
+    fill_bio(mypres,1,14,3,2, str(round(monthly_sip*smallCap,0)))
+    fill_bio(mypres,1,14,4,1, str(longDurationBond*100)+"%")
+    fill_bio(mypres,1,14,4,2, str(round(monthly_sip*longDurationBond,0)))
+    fill_bio(mypres,1,14,5,1, "100%")
+    fill_bio(mypres,1,14,5,2, str(monthly_sip))
 
     def pptx_job(mypres, name, mobile, code, date, avg_capacities, avg_tolerances, sip, figi, aror):
 
@@ -874,7 +910,7 @@ def pptx_work(presentation, name, mobile, code,date, sip, aror, figi, avg_capaci
                                        met_top, height = met_height)
     
         lin_left = Inches(0.2)
-        lin_top = Inches(2.5) 
+        lin_top = Inches(7.2) 
     
         lin_height = Inches(3.0) 
           
@@ -885,29 +921,29 @@ def pptx_work(presentation, name, mobile, code,date, sip, aror, figi, avg_capaci
     pptx_job(mypres, name, mobile, code, date, avg_capacities, avg_tolerances, sip, figi, aror)
 
 
-    mypres.slides[1].shapes[12].text_frame.paragraphs[0].text = tolerance_remarks(avg_capacities, avg_tolerances)
-    for paragraph in mypres.slides[1].shapes[12].text_frame.paragraphs:
+    mypres.slides[2].shapes[17].text_frame.paragraphs[0].text = tolerance_remarks(avg_capacities, avg_tolerances)
+    for paragraph in mypres.slides[2].shapes[17].text_frame.paragraphs:
         paragraph.font.size = Pt(10)
         paragraph.font.name = 'Times New Roman'
         
-    mypres.slides[1].shapes[10].text_frame.paragraphs[0].text = 'A monthly SIP amount of '+str(format_currency(sip/12, 'INR', locale='en_IN'))+' is recommended based on your current lifestyle and commitments. However, the more the better.'
-    for paragraph in mypres.slides[1].shapes[10].text_frame.paragraphs:
+    mypres.slides[1].shapes[9].text_frame.paragraphs[0].text = 'A monthly SIP amount of '+str(format_currency(sip/12, 'INR', locale='en_IN'))+' is recommended based on your current lifestyle and commitments. However, the more the better.'
+    for paragraph in mypres.slides[1].shapes[9].text_frame.paragraphs:
         paragraph.font.size = Pt(10)
         paragraph.font.name = 'Times New Roman'
         
-    mypres.slides[1].shapes[10].text_frame.paragraphs[3].text = 'If you START investing and stick to the plan of monthly SIP of '+str(format_currency(sip/12, 'INR', locale='en_IN'))+ ' and earn avg. annual return of '+str(aror*100)+'% on equity portion and '+str(round(figi*100,1))+' % on debt portion , this is how your portfolio will grow- '
-    for paragraph in mypres.slides[1].shapes[10].text_frame.paragraphs:
+    mypres.slides[1].shapes[9].text_frame.paragraphs[3].text = 'If you START investing and stick to the plan of monthly SIP of '+str(format_currency(sip/12, 'INR', locale='en_IN'))+ ' and earn avg. annual return of '+str(nif*100)+'% on equity portion and '+str(round(figi*100,1))+' % on debt portion , this is how your portfolio will grow- '
+    for paragraph in mypres.slides[1].shapes[9].text_frame.paragraphs:
         paragraph.font.size = Pt(10)
         paragraph.font.name = 'Times New Roman'    
         
-    srn = counter() # generates a srn number
+                                            
 
-    mypres.slides[0].shapes[12].text_frame.paragraphs[0].text = 'SRN: ' + str(srn)+ '\nTransaction ID: '+str(int(mobile)-1000)+'\nReport Created:  '+str(date)
+    mypres.slides[0].shapes[12].text_frame.paragraphs[0].text = 'Startt Report Number (SRN):  Unique Transaction ID: '+str(int(mobile)-1000)+'\nReport Created:  '+str(date)
     for paragraph in mypres.slides[0].shapes[12].text_frame.paragraphs:
         paragraph.font.size = Pt(8)
         paragraph.font.name = 'Times New Roman'
         
-    mypres.slides[1].shapes[7].text_frame.paragraphs[0].text = 'SRN: '+ str(srn)+ '\nTransaction ID: '+str(int(mobile)-1000)+'\nReport Created:  '+str(date)
+    mypres.slides[1].shapes[7].text_frame.paragraphs[0].text = 'Startt Report Number (SRN):  Unique Transaction ID: '+str(int(mobile)-1000)+'\nReport Created:  '+str(date)
     for paragraph in mypres.slides[1].shapes[7].text_frame.paragraphs:
         paragraph.font.size = Pt(8)
         paragraph.font.name = 'Times New Roman'
@@ -919,7 +955,7 @@ def pptx_work(presentation, name, mobile, code,date, sip, aror, figi, avg_capaci
         parent_element.remove(p)
         
     if data_row[14] != 'less than 10%':
-        delete_paragraph(mypres.slides[1].shapes[12].text_frame.paragraphs[1])
+        delete_paragraph(mypres.slides[2].shapes[17].text_frame.paragraphs[1])
         paragraph.font.name = 'Times New Roman'    
         
 
@@ -952,7 +988,7 @@ def to_pdf(folder_path, base_presentation, name, code):
     '''
     
 
-    folder_path += "\\"
+    folder_path += "/"
     
     input_file_paths = os.listdir(folder_path)
     
@@ -964,22 +1000,27 @@ def to_pdf(folder_path, base_presentation, name, code):
         
         # Create input file path
         input_file_path = os.path.join(folder_path, "base.pptx")
-        powerpoint = comtypes.client.CreateObject("Powerpoint.Application")
+        #powerpoint = comtypes.client.CreateObject("Powerpoint.Application")
         
-        powerpoint.Visible = 1
+        #powerpoint.Visible = 1
         
-        slides = powerpoint.Presentations.Open(input_file_path)
-        
+        #slides = powerpoint.Presentations.Open(input_file_path)
         file_name = os.path.splitext(input_file_name)[0]
-        
+
         output_file_path = os.path.join(folder_path, str(name)+str(code) + ".pdf")
+        command = "unoconv -f pdf \"{}\"".format(input_file_name)
+        os.system(command)
         
-        # Save as PDF (formatType = 32)
-        slides.SaveAs(output_file_path, 32)
+    #     file_name = os.path.splitext(input_file_name)[0]
         
-        # Close the slide deck
-        slides.Close()
-    powerpoint.Quit()
+    #     output_file_path = os.path.join(folder_path, str(name)+str(code) + ".pdf")
+        
+    #     # Save as PDF (formatType = 32)
+    #     slides.SaveAs(output_file_path, 32)
+        
+    #     # Close the slide deck
+    #     slides.Close()
+    # powerpoint.Quit()
 
 
 

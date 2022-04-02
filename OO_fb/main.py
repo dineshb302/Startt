@@ -5,14 +5,16 @@ import s3fs
 import datetime
 import uvicorn
 import re
+import uuid
+import os
+import time
+from config import *
+
 s3 = boto3.client('s3')
 
-print('ENTER AWS ACCESS KEY ID')
-aws_access_key_id = input(str()) #'AKIATGGQZDN5WUZPS55S'
-print('\n')
-print('ENTER AWS SECRET ACCESS KEY')
-aws_secret_access_key = input(str()) # '6UvFA7lsRtlFH7/6/jh+P+JeTehI86Gk1XCXH/5B'
-#
+aws_access_key_id = access_id
+aws_secret_access_key = access_key
+
 f.os.environ["AWS_DEFAULT_REGION"] = 'ap-south-1'
 f.os.environ["AWS_ACCESS_KEY_ID"] = aws_access_key_id
 f.os.environ["AWS_SECRET_ACCESS_KEY"] = aws_secret_access_key
@@ -62,13 +64,18 @@ def action(data_row):
                 net_worth_as_input, age, life_stage, savings_as_input, 
                 income_source, income_as_input, data_row)
     
-    f.to_pdf('C:\\Users\\rizve\\startt_finbot','base.pptx',name,code)
+    f.to_pdf('./','base.pptx',name,code)
     
 
     
     
-    s3.Bucket('starttbucket').upload_file(Filename=str(name)+str(code)+'.pdf', Key=str(name)+str(code)+'.pdf')
-
+    #s3.Bucket('starttbucket').upload_file(Filename=str(name)+str(code)+'.pdf', Key=str(name)+str(code)+'.pdf')
+    s3.Bucket('starttbucket').upload_file(Filename='base.pdf', Key=str(name)+str(code)+'.pdf')
+    time.sleep(2)
+    url = boto3.client('s3').generate_presigned_url('get_object', Params = {'Bucket': 'starttbucket',
+    'Key': str(name) + str(code) + '.pdf'}, ExpiresIn = 100000
+    )
+    return url
    #get public url of this file and return
 
 app = FastAPI()
@@ -91,9 +98,12 @@ async def main(request: Request):
     data_list.append(data['age'])
     data_list.append(data['income'])
     data_list.append(data['phone'])
-    action(data_list)     # assign url to variable like --> url = action(data_list)
-    return {"res": True}  # return url with response --> {"res": True, "url": url}
+    url = action(data_list)     # assign url to variable like --> url = action(data_list)
+    file_name = str(uuid.uuid4())
+    cmd = "mv base.pdf {}.pdf".format(file_name)
+    os.system(cmd)
+    return {"res": True, "url": url}  # return url with response --> {"res": True, "url": url}
 
 if __name__ == '__main__':
     # workers --> to handle multiple user requests at a time
-    uvicorn.run('main:app', host='0.0.0.0', port=5001, workers=5)
+    uvicorn.run('main:app', host='0.0.0.0', port=5007, workers=1)
