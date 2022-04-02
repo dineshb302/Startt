@@ -10,20 +10,20 @@ import os
 import time
 from config import *
 
-# s3 = boto3.client('s3')
+s3 = boto3.client('s3')
 
-# aws_access_key_id = access_id
-# aws_secret_access_key = access_key
+aws_access_key_id = access_id
+aws_secret_access_key = access_key
 
-# f.os.environ["AWS_DEFAULT_REGION"] = 'ap-south-1'
-# f.os.environ["AWS_ACCESS_KEY_ID"] = aws_access_key_id
-# f.os.environ["AWS_SECRET_ACCESS_KEY"] = aws_secret_access_key
-# s3 = boto3.resource(
-#     service_name='s3',
-#     region_name='ap-south-1',
-#     aws_access_key_id = aws_access_key_id,
-#     aws_secret_access_key= aws_secret_access_key
-# )
+f.os.environ["AWS_DEFAULT_REGION"] = 'ap-south-1'
+f.os.environ["AWS_ACCESS_KEY_ID"] = aws_access_key_id
+f.os.environ["AWS_SECRET_ACCESS_KEY"] = aws_secret_access_key
+s3 = boto3.resource(
+    service_name='s3',
+    region_name='ap-south-1',
+    aws_access_key_id = aws_access_key_id,
+    aws_secret_access_key= aws_secret_access_key
+)
 
 
 def action(data_row):
@@ -71,16 +71,16 @@ def action(data_row):
                 income_source, income_as_input, data_row,longDurationBond,
                 nifty, it, smallCap, nif)
     
-    # f.to_pdf('./','base.pptx',name,code)
+    f.to_pdf('./','base.pptx',name,code)
     
 
     
     
     #s3.Bucket('starttbucket').upload_file(Filename=str(name)+str(code)+'.pdf', Key=str(name)+str(code)+'.pdf')
-    # s3.Bucket('starttbucket').upload_file(Filename='base.pdf', Key=str(name)+str(code)+'.pdf')
-    # time.sleep(2)
-    # url = boto3.client('s3').generate_presigned_url('get_object', Params = {'Bucket': 'starttbucket','Key': str(name) + str(code) + '.pdf'}, ExpiresIn = 100000)
-    # return url
+    s3.Bucket('starttbucket').upload_file(Filename='base.pdf', Key=str(name)+str(code)+'.pdf')
+    time.sleep(2)
+    url = boto3.client('s3').generate_presigned_url('get_object', Params = {'Bucket': 'starttbucket','Key': str(name) + str(code) + '.pdf'}, ExpiresIn = 100000)
+    return url
    #get public url of this file and return
 
 app = FastAPI()
@@ -111,4 +111,4 @@ async def main(request: Request):
 
 if __name__ == '__main__':
     # workers --> to handle multiple user requests at a time
-    uvicorn.run('main:app', host='0.0.0.0', port=5007, workers=1)
+    uvicorn.run('main:app', host='0.0.0.0', port=5001, workers=1)
