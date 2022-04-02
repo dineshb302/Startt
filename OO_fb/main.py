@@ -45,10 +45,16 @@ def action(data_row):
     code = timestamp.replace('/','').replace(':','').replace(' ','')
     
     data_dict = f.nest()
-    nif, figi, aror = 0.15, 0.07, 0.15 #changed to 15
+    
+    aror = 0.10
+    niftyif, itif, scif, ldif = 0.15, 0.2846, 0.1199, 0.07
     
     sum_capacities, sum_tolerances, avg_capacities, avg_tolerances, total, avg_total = f.scores(data_row, data_dict)
-    debt, equity = f.risk_profile(avg_total)
+    debt, equity, longDurationBond, nifty, it, smallCap= f.risk_profile(avg_total)
+    nif = (niftyif * nifty)/equity + (itif*it)/equity + (smallCap*scif)/equity
+
+    figi = (ldif*longDurationBond)/debt
+
     invested_amount, portfolio_amount, years = f.schedule(sip, debt, equity, nif, figi)
     df_forecast = f.forecast(invested_amount, portfolio_amount, years, sip, debt, equity, nif, figi) 
     remarks = f.tolerance_remarks(avg_capacities, avg_tolerances)
@@ -59,10 +65,11 @@ def action(data_row):
     f.line_chart(df_forecast, name, mobile, code)
     f.gauge(name, mobile, code,labels=['Conservative','Moderate','Balanced','Assertive','Aggressive'], colors=["#FFB6C1","#EE6363","#CD5555","#8B3A3A","#800000"], arrow=f.pointer(avg_total), size=(5,3), title=str('Your Risk Score is {}'.format(int(avg_total))))
 
-    f.pptx_work("Investor Wealth Report-v2.pptx", name, mobile, code, date, 
+    f.pptx_work("Investor Wealth Report-v3.pptx", name, mobile, code, date, 
                 sip, aror, figi, avg_capacities, avg_tolerances, 
                 net_worth_as_input, age, life_stage, savings_as_input, 
-                income_source, income_as_input, data_row)
+                income_source, income_as_input, data_row,longDurationBond,
+                nifty, it, smallCap)
     
     f.to_pdf('./','base.pptx',name,code)
     
@@ -72,9 +79,7 @@ def action(data_row):
     #s3.Bucket('starttbucket').upload_file(Filename=str(name)+str(code)+'.pdf', Key=str(name)+str(code)+'.pdf')
     s3.Bucket('starttbucket').upload_file(Filename='base.pdf', Key=str(name)+str(code)+'.pdf')
     time.sleep(2)
-    url = boto3.client('s3').generate_presigned_url('get_object', Params = {'Bucket': 'starttbucket',
-    'Key': str(name) + str(code) + '.pdf'}, ExpiresIn = 100000
-    )
+    url = boto3.client('s3').generate_presigned_url('get_object', Params = {'Bucket': 'starttbucket','Key': str(name) + str(code) + '.pdf'}, ExpiresIn = 100000)
     return url
    #get public url of this file and return
 
