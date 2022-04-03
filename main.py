@@ -61,7 +61,7 @@ def action(data_row):
 
 
 
-    f.stackbar(debt, equity, name, mobile, code)    
+    f.stackbar(round(debt,1), round(equity,1), name, mobile, code)    
     f.line_chart(df_forecast, name, mobile, code)
     f.gauge(name, mobile, code,labels=['Conservative','Moderate','Balanced','Assertive','Aggressive'], colors=["#FFB6C1","#EE6363","#CD5555","#8B3A3A","#800000"], arrow=f.pointer(avg_total), size=(5,3), title=str('Your Risk Score is {}'.format(int(avg_total))))
 
@@ -111,4 +111,4 @@ async def main(request: Request):
 
 if __name__ == '__main__':
     # workers --> to handle multiple user requests at a time
-    uvicorn.run('main:app', host='0.0.0.0', port=5001, workers=1)
+    uvicorn.run('main:app', host='0.0.0.0', port=5007, workers=1)
